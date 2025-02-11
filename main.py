@@ -1,10 +1,16 @@
+import threading
 from openai import OpenAI
 import tkinter as tk
 from tkinter import *
 from tkinter import filedialog, BOTTOM,ttk
 from docx import Document
+import sys
 
-
+class PrintRedirector:
+    def __init__(self, text_widget):
+        self.text_space = text_widget
+    def write(self, text):
+        self.text_space.insert(tk.END, text)
 
 def select_file(i=0):
     entryString = E1.get()
@@ -51,9 +57,15 @@ def select_file(i=0):
 
         if s_value:
             for chunk in chat_completion:
+                # 打印思维链内容
+                if hasattr(chunk.choices[0].delta, 'reasoning_content'):
+                    print(f"{chunk.choices[0].delta.reasoning_content}", end="")
+                    output_text.yview_moveto(1.0)
                 if hasattr(chunk.choices[0].delta, 'content'):
                     if chunk.choices[0].delta.content != None and len(chunk.choices[0].delta.content) != 0:
                         textGather=textGather+chunk.choices[0].delta.content
+                        print(chunk.choices[0].delta.content, end="")
+                        output_text.yview_moveto(1.0)
         else:
             result = chat_completion.choices[0].message.content
 
@@ -72,6 +84,19 @@ def select_file(i=0):
     label["text"] = "生成完成"
 
 
+class MyThread(threading.Thread):
+    def __init__(self, func, *args):
+        super().__init__()
+
+        self.func = func
+        self.args = args
+
+        self.setDaemon(True)
+        self.start()  # 在这里开始
+
+    def run(self):
+        self.func(*self.args)
+
 # 创建Tkinter窗口
 root = tk.Tk()
 root.title("文本扩充器")
@@ -83,15 +108,29 @@ E1 = Entry(root, bd =5)
 E1.place (x=70,y=20, width=400, height=30)
 
 # 创建并配置按钮，点击时调用select_file函数
-button = tk.Button(root, text="选择文件", command=select_file)
+button = tk.Button(root, text="选择文件", command=lambda :MyThread(select_file))
 button.place (x=200,y=100, width=90, height=30)
 
 label = tk.Label(root, text="选择文件开始扩充文本",font=('Calibri 15 bold'))
-label.place (x=45,y=180, width=400, height=50)
+label.place (x=45,y=300, width=400, height=50)
+
+#输出框
+output_text = tk.Text(root)
+#滚动条
+scrollbar = tk.Scrollbar(root)
+scrollbar.place(x=495,y=200,width=5, height=80)
+# 将滚动条与Text组件关联
+output_text.config(yscrollcommand=scrollbar.set)
+scrollbar.config(command=output_text.yview)
+
+output_text.place(x=5,y=200,width=490, height=80)
+
+sys.stdout = PrintRedirector(output_text)
+
 
 statement=tk.Label(root, text="本项目完全免费，\n用户可以自由下载、使用以及分发本项目的代码和相关资源。\n你无需支付任何费用即可享受本项目的功能和服务。\n开发者不对因使用本项目而产生的任何直接或间接损失承担责任。\n用户在使用本项目时应自行承担风险，并对可能的后果负责。",
                    font=('Arial', 10))
-statement.place (x=45,y=240, width=400, height=200)
+statement.place (x=45,y=300, width=400, height=100)
 
 root.resizable(0,0)
 # 运行Tkinter事件循环

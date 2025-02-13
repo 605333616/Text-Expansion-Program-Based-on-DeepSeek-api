@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>拖放上传器</title>
+    <style>
+        #dropzone {
+            border: 2px dashed #ccc;
+            padding: 20px;
+            text-align: center;
+            font-size: 18px;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+    <div id="dropzone">
+        将文件拖到此处进行上传
+    </div>
+    <div>
+        {{display}}
+    </div>
+    <div>
+        <a href='/download'>下载扩写文件</a>
+    </div>
+
+    <script>
+        var dropzone = document.getElementById('dropzone');
+
+        dropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            dropzone.style.backgroundColor = '#f2f2f2';
+        });
+
+        dropzone.addEventListener('dragleave', function(e) {
+            e.preventDefault();
+            dropzone.style.backgroundColor = '#ffffff';
+        });
+
+        dropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            dropzone.style.backgroundColor = '#ffffff';
+
+            var file = e.dataTransfer.files[0];
+            var formData = new FormData();
+            formData.append('file', file);
+
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', '/upload', true);
+            xhr.onload = function() {
+                if (xhr.status == 200) {
+                    console.log('文件上传成功');
+                } else {
+                    console.log('文件上传失败');
+                }
+            }
+            xhr.send(formData);
+        });
+
+    </script>
+</body>
+</html>

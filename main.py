@@ -12,8 +12,9 @@ class PrintRedirector:
     def write(self, text):
         self.text_space.insert(tk.END, text)
 
-def select_file(i=0):
+def select_file():
     entryString = E1.get()
+    system_string=E2.get("1.0","end")
     client = OpenAI(
         api_key=entryString,  # 知识引擎原子能力 APIKey
         base_url="https://api.lkeap.cloud.tencent.com/v1",
@@ -26,6 +27,7 @@ def select_file(i=0):
 
     # 初始化一个空列表来存储文字内容
     text_content = []
+    word_content=[]
     # 遍历每个段落
     for paragraph in doc.paragraphs:
         # 获取段落文本
@@ -38,42 +40,46 @@ def select_file(i=0):
     s_value = True
     # 请求
     for element in text_content:
-        chat_completion = client.chat.completions.create(
-            model="deepseek-r1",
-            messages=[
-                {
-                    'role': 'system',
-                    'content': '只填充细节，不扩充情节,要有画面感，尽量简洁,限制在一个自然段以内：',
-                },
-                {
-                    "role": "user",
-                    "content": element
-                }
-            ],
-            stream=s_value,
-        )
-
-        textGather=''
-
-        if s_value:
-            for chunk in chat_completion:
-                # 打印思维链内容
-                if hasattr(chunk.choices[0].delta, 'reasoning_content'):
-                    print(f"{chunk.choices[0].delta.reasoning_content}", end="")
-                    output_text.yview_moveto(1.0)
-                if hasattr(chunk.choices[0].delta, 'content'):
-                    if chunk.choices[0].delta.content != None and len(chunk.choices[0].delta.content) != 0:
-                        textGather=textGather+chunk.choices[0].delta.content
-                        print(chunk.choices[0].delta.content, end="")
-                        output_text.yview_moveto(1.0)
+        if element=='':
+            pass
         else:
-            result = chat_completion.choices[0].message.content
+            chat_completion = client.chat.completions.create(
+                model="deepseek-r1",
+                messages=[
+                    {
+                        'role': 'system',
+                        'content': system_string,
+                    },
+                    {
+                        "role": "user",
+                        "content": element
+                    }
+                ],
+                stream=s_value,
+            )
 
-        text_content[i]=textGather
+            textGather=''
 
-        i = i + 1
+            if s_value:
+                for chunk in chat_completion:
+                    # 打印思维链内容
+                    if hasattr(chunk.choices[0].delta, 'reasoning_content'):
+                        print(f"{chunk.choices[0].delta.reasoning_content}", end="")
+                        output_text.yview_moveto(1.0)
+                    if hasattr(chunk.choices[0].delta, 'content'):
+                        if chunk.choices[0].delta.content != None and len(chunk.choices[0].delta.content) != 0:
+                            textGather=textGather+chunk.choices[0].delta.content
+                            print(chunk.choices[0].delta.content, end="")
+                            output_text.yview_moveto(1.0)
+            else:
+                result = chat_completion.choices[0].message.content
 
-    full_text = '\n'.join(text_content)
+            word_content.append(textGather)
+            print("\n\n-----------生成完成--------------")
+            output_text.yview_moveto(1.0)
+
+
+    full_text = '\n'.join(word_content)
     # 实例化一个Document对象，相当于打开word软件，新建一个空白文件
     doc = Document()
     # word文件尾部增加一个段落，并写入内容
@@ -107,9 +113,14 @@ L1.place (x=15,y=18, width=60, height=30)
 E1 = Entry(root, bd =5)
 E1.place (x=70,y=20, width=400, height=30)
 
+L2 = Label(root, text="系统提示词")
+L2.place (x=8,y=53, width=60, height=30)
+E2 = Text(root, bd =5)
+E2.place (x=70,y=55, width=400, height=90)
+
 # 创建并配置按钮，点击时调用select_file函数
 button = tk.Button(root, text="选择文件", command=lambda :MyThread(select_file))
-button.place (x=200,y=100, width=90, height=30)
+button.place (x=200,y=160, width=90, height=30)
 
 label = tk.Label(root, text="选择文件开始扩充文本",font=('Calibri 15 bold'))
 label.place (x=45,y=300, width=400, height=50)

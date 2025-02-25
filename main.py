@@ -75,8 +75,7 @@ def select_file():
                 result = chat_completion.choices[0].message.content
 
             word_content.append(textGather)
-            print("\n\n-----------生成完成--------------")
-            output_text.yview_moveto(1.0)
+
 
 
     full_text = '\n'.join(word_content)
@@ -88,6 +87,8 @@ def select_file():
     address = selected_file_path.split('.', 1)
     doc.save(address[0] + '-已修改版本' + '.' + address[1])
     label["text"] = "生成完成"
+    print("\n\n-----------生成完成--------------")
+    output_text.yview_moveto(1.0)
 
 
 class MyThread(threading.Thread):
